@@ -1,0 +1,21 @@
+{
+  "name": "system-health-monitor",
+  "version": "1.0.0",
+  "private": true,
+  "description": "PulseWatch - Service Health & Uptime Monitor",
+  "license": "MIT",
+  "workspaces": ["apps/api", "apps/web"],
+  "scripts": {
+    "lint": "npm run lint --workspace apps/api && npm run lint --workspace apps/web",
+    "test": "npm run test --workspace apps/api",
+    "test:e2e": "npm run test:e2e --workspace apps/api",
+    "build": "npm run build --workspace apps/api && npm run build --workspace apps/web",
+    "migration:run": "npm run migration:run --workspace apps/api",
+    "seed": "npm run seed --workspace apps/api",
+    "format": "prettier --write \"apps/**/src/**/*.{ts,tsx}\""
+  },
+  "devDependencies": {
+    "prettier": "3.3.3"
+  },
+  "engines": { "node": ">=20" }
+}

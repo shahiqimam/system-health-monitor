@@ -1,0 +1,62 @@
+export enum UserRole {
+  ADMIN = 'ADMIN',
+  OPERATOR = 'OPERATOR',
+  VIEWER = 'VIEWER',
+}
+
+export enum TargetStatus {
+  UNKNOWN = 'UNKNOWN',
+  UP = 'UP',
+  DEGRADED = 'DEGRADED',
+  DOWN = 'DOWN',
+  PAUSED = 'PAUSED',
+}
+
+export enum HttpMethod {
+  GET = 'GET',
+  HEAD = 'HEAD',
+}
+
+export enum CheckResultStatus {
+  SUCCESS = 'SUCCESS',
+  FAILURE = 'FAILURE',
+}
+
+export enum CheckErrorType {
+  TIMEOUT = 'TIMEOUT',
+  DNS = 'DNS',
+  CONNECTION = 'CONNECTION',
+  TLS = 'TLS',
+  INVALID_STATUS = 'INVALID_STATUS',
+  REDIRECT_LIMIT = 'REDIRECT_LIMIT',
+  BLOCKED_TARGET = 'BLOCKED_TARGET',
+  UNKNOWN = 'UNKNOWN',
+}
+
+export enum IncidentStatus {
+  OPEN = 'OPEN',
+  ACKNOWLEDGED = 'ACKNOWLEDGED',
+  RESOLVED = 'RESOLVED',
+}
+
+export enum AuditAction {
+  TARGET_CREATED = 'TARGET_CREATED',
+  TARGET_UPDATED = 'TARGET_UPDATED',
+  TARGET_PAUSED = 'TARGET_PAUSED',
+  TARGET_RESUMED = 'TARGET_RESUMED',
+  TARGET_ARCHIVED = 'TARGET_ARCHIVED',
+  MANUAL_CHECK_REQUESTED = 'MANUAL_CHECK_REQUESTED',
+  INCIDENT_OPENED = 'INCIDENT_OPENED',
+  INCIDENT_ACKNOWLEDGED = 'INCIDENT_ACKNOWLEDGED',
+  INCIDENT_RESOLVED = 'INCIDENT_RESOLVED',
+  INCIDENT_NOTE_ADDED = 'INCIDENT_NOTE_ADDED',
+  INCIDENT_NOTE_UPDATED = 'INCIDENT_NOTE_UPDATED',
+}
+
+export type MetricsWindow = '24h' | '7d' | '30d';
+
+export const WINDOW_HOURS: Record<MetricsWindow, number> = {
+  '24h': 24,
+  '7d': 24 * 7,
+  '30d': 24 * 30,
+};

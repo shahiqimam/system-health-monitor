@@ -1,0 +1,12 @@
+# Local demo overlay.
+#
+# WARNING: this file enables ALLOW_PRIVATE_TARGETS so the API may monitor the
+# demo containers, which live on the private Docker bridge network. Use it only
+# on a trusted local machine. Never apply this overlay to an internet-exposed
+# deployment without a deliberate network security model.
+#
+#   docker compose -f docker-compose.yml -f docker-compose.demo.yml --profile demo up --build -d
+services:
+  api:
+    environment:
+      ALLOW_PRIVATE_TARGETS: 'true'
