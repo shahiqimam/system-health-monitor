@@ -10,6 +10,11 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change_me}
     volumes:
       - pulsewatch_pgdata:/var/lib/postgresql/data
+    # Published so local development and the e2e suite can reach the database
+    # from the host. Containers still resolve it as "postgres" on the bridge
+    # network, never as localhost.
+    ports:
+      - '${POSTGRES_PORT:-5432}:5432'
     healthcheck:
       test: ['CMD-SHELL', 'pg_isready -U ${POSTGRES_USER:-pulsewatch} -d ${POSTGRES_DB:-pulsewatch}']
       interval: 5s

@@ -5,5 +5,6 @@ module.exports = {
   transform: { '^.+\.(t|j)s$': 'ts-jest' },
   moduleNameMapper: { '^@/(.*)$': '<rootDir>/src/$1' },
   testEnvironment: 'node',
+  setupFiles: ['<rootDir>/test/setup-e2e.ts'],
   testTimeout: 60000,
 };

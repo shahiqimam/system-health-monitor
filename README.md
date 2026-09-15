@@ -304,6 +304,7 @@ NODE_ENV=development
 POSTGRES_DB=pulsewatch
 POSTGRES_USER=pulsewatch
 POSTGRES_PASSWORD=change_me
+POSTGRES_PORT=5432
 
 DATABASE_HOST=localhost
 DATABASE_PORT=5432
@@ -403,13 +404,16 @@ status enum. Served when `SWAGGER_ENABLED=true` (default outside production).
 ## 22. Testing
 
 ```bash
-npm run lint     # ESLint across both workspaces
-npm test         # Jest unit/integration suite
-npm run build    # nest build + next build
-bash scripts/smoke-test.sh   # end-to-end, against a running stack
+npm run lint      # ESLint across both workspaces
+npm test          # 76 unit tests, no database required
+npm run build     # nest build + next build
+npm run test:e2e  # 39 e2e tests against a real PostgreSQL
+bash scripts/smoke-test.sh   # full stack, including the scheduler
 ```
 
-**76 tests** covering:
+### Unit tests (76, no database)
+
+Covering:
 
 | Area           | What is asserted                                                          |
 | -------------- | ------------------------------------------------------------------------- |
@@ -422,6 +426,30 @@ bash scripts/smoke-test.sh   # end-to-end, against a running stack
 
 The check-engine tests run against a **local `http.createServer`**, never the
 internet, so CI reliability never depends on a third-party endpoint.
+
+### End-to-end tests (39, real PostgreSQL)
+
+`apps/api/test/` boots the whole `AppModule` against a real database and drives
+it over HTTP with supertest. The target under test is a local
+`http.createServer` whose status code the spec controls, so a failure sequence
+is deterministic rather than timing-dependent.
+
+| Spec                    | Covers                                                                    |
+| ----------------------- | ------------------------------------------------------------------------- |
+| `monitoring.e2e-spec.ts` | Login, create target, SSRF rejections, check, `DEGRADED` x2 without an incident, threshold opens exactly one incident, further failures reuse it, acknowledge, note, first success stays `DOWN`, recovery resolves, metrics arithmetic, paused target excluded from the due query and refusing `check-now`, resume resets counters, archive keeps incidents |
+| `rbac.e2e-spec.ts`       | 401 unauthenticated and on a garbage token, identical login error for unknown email and wrong password, viewer read-only across every mutating route, operator allowed but blocked from admin routes, admin edit/validation/user management, password hash never returned |
+
+Prerequisites: a reachable PostgreSQL and a `pulsewatch_test` database.
+
+```bash
+docker compose up -d postgres
+docker compose exec -T postgres psql -U pulsewatch -d postgres -c "CREATE DATABASE pulsewatch_test OWNER pulsewatch;"
+npm run test:e2e
+```
+
+The suite runs with `SCHEDULER_ENABLED=false` so the specs own all timing, and
+with `ALLOW_PRIVATE_TARGETS=true` so they can check `127.0.0.1`. Those overrides
+live in `apps/api/test/setup-e2e.ts`, never in application defaults.
 
 `scripts/smoke-test.sh` drives the real stack: liveness, readiness, login,
 SSRF rejection, healthy target `UP`, three failures through
@@ -437,9 +465,14 @@ the guard is what would now catch it.
 
 ## 23. Screenshots
 
-Capture guide and rules in **[docs/SCREENSHOTS.md](docs/SCREENSHOTS.md)**. The
-image files are not committed yet; when they are, they will come from a real
-running stack. No mock-ups.
+![PulseWatch dashboard](docs/images/dashboard.png)
+
+![Open incident](docs/images/incident-open.png)
+
+All captures are real, taken against the Compose demo stack; the incident above
+was opened by the scheduler after three consecutive failures from `demo-flaky`.
+No rows were hand-written to improve a chart. Full set, with how to reproduce
+them: **[docs/SCREENSHOTS.md](docs/SCREENSHOTS.md)**.
 
 ## 24. Design decisions
 

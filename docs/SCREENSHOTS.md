@@ -1,59 +1,89 @@
 # Screenshots
 
-> **Status:** the image files are not committed yet. Everything below is a
-> capture guide, not a description of images that exist. Nothing in this
-> repository is a mock-up or a rendering — when these are captured they must
-> come from a real running stack.
+Every image below is a real capture of the running application against the
+Compose demo stack. Nothing is a mock-up, and no data was hand-written into the
+database to make a chart look better: the incident shown was produced by the
+scheduler checking `demo-flaky` after its `/admin/fail` toggle was flipped.
 
-Place captures in `docs/images/` using the file names below, then the README
-and this page will render them.
+Captured at 1440x900, 2x device scale, with Playwright driving a real Chromium
+against `http://localhost:3000`.
 
-## How to get a stack worth photographing
+## Dashboard
+
+![PulseWatch dashboard](images/dashboard.png)
+
+Summary cards, uptime and latency charts for the selected window, status
+distribution, active incidents and recent recoveries. Note that the uptime card
+displays its sample count ("22 checks sampled") next to the percentage.
+
+## Target list
+
+![Target list](images/targets.png)
+
+Name, host, status, 24h uptime with sample count, 24h p95 latency, last checked
+and last success. Only the host is shown, never the full query string.
+
+## Target detail
+
+![Target detail](images/target-detail.png)
+
+Configuration, uptime and latency statistics for the window, the checks
+timeline, recent results and the target's incidents. Operator and admin
+controls (check now, pause/resume, archive) appear according to role.
+
+## Incident - open and acknowledged
+
+![Open incident](images/incident-open.png)
+
+A real incident opened by the scheduler after three consecutive failures. The
+timeline shows the transition clearly: four `SUCCESS` rows at 200, then
+`FAILURE` rows at 503 classified `INVALID_STATUS`. The summary states the
+symptom and the page says explicitly that root cause is not inferred.
+
+## Incident - resolved by recovery
+
+![Resolved incident](images/incident-resolved.png)
+
+The same incident after `demo-flaky` was healed and two consecutive successes
+were recorded. `resolvedAt` is populated; nobody clicked a "close" button,
+because there isn't one.
+
+## Incident list
+
+![Incident list](images/incidents.png)
+
+## New target - server-side SSRF rejection
+
+![New target form with an SSRF rejection](images/target-new.png)
+
+The form submitted `https://user:secret@example.com/health`. Client-side Zod
+validation accepts the URL shape, and the **server** refuses it with
+`Target URL must not contain credentials`. A credentialed URL is rejected
+regardless of `ALLOW_PRIVATE_TARGETS`, which is why it is the honest example to
+show here: the demo profile enables private targets, so a link-local URL is
+deliberately *accepted* in that configuration.
+
+## Reproducing these
 
 ```bash
 docker compose -f docker-compose.yml -f docker-compose.demo.yml --profile demo up --build -d
 docker compose exec -T api node dist/database/seed.js
 ```
 
-Let it run for 10-15 minutes so the charts have more than a handful of points,
-then drive a real incident:
+Let the scheduler collect samples, then drive the incident:
 
 ```bash
-curl http://localhost:8082/admin/fail   # demo-flaky starts returning 503
-# wait for 3 consecutive failures (~90s at the seeded 30s interval)
-curl http://localhost:8082/admin/heal   # back to 200
-# wait for 2 consecutive successes
+curl http://localhost:8082/admin/fail   # three failures at the 30s seeded interval
+curl http://localhost:8082/admin/heal   # two successes resolve it
 ```
 
-Sign in at <http://localhost:3000> with `admin@pulsewatch.local` /
+Sign in at <http://localhost:3000> as `admin@pulsewatch.local` /
 `AdminPass123!`.
 
-## Captures to take
+## Rules followed
 
-| File                       | Page              | Must show                                                                 |
-| -------------------------- | ----------------- | ------------------------------------------------------------------------- |
-| `dashboard.png`            | `/dashboard`      | Six summary cards, uptime and latency charts with real points, status distribution |
-| `targets.png`              | `/targets`        | Both demo targets, mixed statuses, 24h uptime with sample counts, p95      |
-| `target-detail.png`        | `/targets/[id]`   | Config panel, uptime/latency charts, recent results table with a mix of SUCCESS and FAILURE |
-| `incident-open.png`        | `/incidents/[id]` | An `OPEN` or `ACKNOWLEDGED` incident, its summary, a note, the surrounding checks timeline |
-| `incident-resolved.png`    | `/incidents/[id]` | The same incident after recovery: `RESOLVED`, with `resolvedAt` populated  |
-| `target-new.png`           | `/targets/new`    | The create form, ideally with the SSRF rejection message visible after submitting a private URL |
-
-Optional but useful:
-
-| File              | Page             | Must show                                        |
-| ----------------- | ---------------- | ------------------------------------------------ |
-| `swagger.png`     | `/api/docs`      | The generated OpenAPI surface                    |
-| `admin-users.png` | `/admin/users`   | The three seeded roles                           |
-
-## Rules
-
-1. **Real UI only.** No mock-ups, no edited numbers, no hand-drawn charts.
-2. **Capture after data exists.** A dashboard full of "no data" demonstrates
-   nothing except that the window is empty.
-3. **Demo data only.** Never capture an employer's hostnames, internal domains,
-   IP addresses or incident text. The demo services exist so this is never
-   necessary.
-4. **Redact nothing after the fact.** If something would need redacting, do not
-   capture it.
-5. Full browser width, light theme, 2x scale if available.
+1. Real UI only - no mock-ups, no edited numbers, no hand-drawn charts.
+2. No fabricated rows inserted to pad a chart. Sparse charts are left sparse:
+   the 24h window buckets hourly, so a short demo genuinely yields few points.
+3. Demo data only. No employer hostnames, internal domains, IP addresses or
+   incident text appears anywhere.

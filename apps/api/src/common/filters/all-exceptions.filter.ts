@@ -26,6 +26,9 @@ export class AllExceptionsFilter implements ExceptionFilter {
 
     let message: string | string[] = 'Internal server error';
     let error = 'Internal Server Error';
+    // Extra fields an exception payload carries (for example the readiness
+    // probe's per-check results) are preserved rather than swallowed.
+    let details: Record<string, unknown> = {};
 
     if (isHttp) {
       const payload = exception.getResponse();
@@ -33,9 +36,14 @@ export class AllExceptionsFilter implements ExceptionFilter {
         message = payload;
         error = exception.name;
       } else {
-        const body = payload as { message?: string | string[]; error?: string };
+        const body = payload as Record<string, unknown> & {
+          message?: string | string[];
+          error?: string;
+        };
         message = body.message ?? exception.message;
         error = body.error ?? exception.name;
+        const { message: _m, error: _e, statusCode: _s, ...rest } = body;
+        details = rest;
       }
     } else {
       this.logger.error(
@@ -48,6 +56,7 @@ export class AllExceptionsFilter implements ExceptionFilter {
       statusCode: status,
       error,
       message,
+      ...details,
       path: request.url,
       timestamp: new Date().toISOString(),
     });
